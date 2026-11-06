@@ -1,0 +1,4 @@
+# AapleSeva Citizen Services Assistant
+# Python 3.10+ standard library is used for core records and CLI modules.
+# Optional dev dependencies:
+pytest>=8.0.0
