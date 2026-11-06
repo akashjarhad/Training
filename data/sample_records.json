@@ -1,0 +1,222 @@
+[
+  {
+    "id": 1,
+    "service_name": "Age, Nationality and Domicile Certificate",
+    "department": "Revenue Department",
+    "category": "Certificates",
+    "time_limit_days": 15,
+    "designated_officer": "Nayab Tahsildar",
+    "first_appellate_officer": "Tahsildar",
+    "second_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 2,
+    "service_name": "Income Certificate",
+    "department": "Revenue Department",
+    "category": "Certificates",
+    "time_limit_days": 15,
+    "designated_officer": "Nayab Tahsildar",
+    "first_appellate_officer": "Tahsildar",
+    "second_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 3,
+    "service_name": "Caste Certificate",
+    "department": "Revenue Department",
+    "category": "Certificates",
+    "time_limit_days": 21,
+    "designated_officer": "Sub-Divisional Officer (SDO) / Deputy Collector",
+    "first_appellate_officer": "Additional Collector",
+    "second_appellate_officer": "District Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 4,
+    "service_name": "Non-Creamy Layer Certificate",
+    "department": "Revenue Department",
+    "category": "Certificates",
+    "time_limit_days": 21,
+    "designated_officer": "Sub-Divisional Officer (SDO) / Nayab Tahsildar",
+    "first_appellate_officer": "Tahsildar",
+    "second_appellate_officer": "Additional Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 5,
+    "service_name": "Certified Copy of 7/12 Extract",
+    "department": "Revenue Department",
+    "category": "Land Records",
+    "time_limit_days": 1,
+    "designated_officer": "Talathi",
+    "first_appellate_officer": "Circle Officer",
+    "second_appellate_officer": "Tahsildar",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 6,
+    "service_name": "Certified Copy of 8A Extract",
+    "department": "Revenue Department",
+    "category": "Land Records",
+    "time_limit_days": 1,
+    "designated_officer": "Talathi",
+    "first_appellate_officer": "Circle Officer",
+    "second_appellate_officer": "Tahsildar",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 7,
+    "service_name": "Senior Citizen Certificate",
+    "department": "Revenue Department",
+    "category": "Social Welfare",
+    "time_limit_days": 8,
+    "designated_officer": "Nayab Tahsildar",
+    "first_appellate_officer": "Tahsildar",
+    "second_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 8,
+    "service_name": "Solvency Certificate",
+    "department": "Revenue Department",
+    "category": "Financial Services",
+    "time_limit_days": 21,
+    "designated_officer": "Tahsildar",
+    "first_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "second_appellate_officer": "Additional Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 9,
+    "service_name": "Small and Marginal Farmer Certificate",
+    "department": "Revenue Department",
+    "category": "Farmer Services",
+    "time_limit_days": 15,
+    "designated_officer": "Tahsildar",
+    "first_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "second_appellate_officer": "Additional Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 10,
+    "service_name": "Temporary Residence Certificate",
+    "department": "Revenue Department",
+    "category": "Certificates",
+    "time_limit_days": 7,
+    "designated_officer": "Nayab Tahsildar",
+    "first_appellate_officer": "Tahsildar",
+    "second_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 11,
+    "service_name": "Agriculturist Certificate",
+    "department": "Revenue Department",
+    "category": "Farmer Services",
+    "time_limit_days": 15,
+    "designated_officer": "Tahsildar",
+    "first_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "second_appellate_officer": "Additional Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 12,
+    "service_name": "Character Certificate",
+    "department": "Revenue Department",
+    "category": "Certificates",
+    "time_limit_days": 15,
+    "designated_officer": "Sub-Divisional Magistrate / Tahsildar",
+    "first_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "second_appellate_officer": "Additional Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 13,
+    "service_name": "Economically Weaker Section (EWS) Certificate",
+    "department": "Revenue Department",
+    "category": "Certificates",
+    "time_limit_days": 15,
+    "designated_officer": "Sub-Divisional Officer (SDO) / Tahsildar",
+    "first_appellate_officer": "Additional Collector",
+    "second_appellate_officer": "District Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 14,
+    "service_name": "Legal Heir Certificate",
+    "department": "Revenue Department",
+    "category": "Financial Services",
+    "time_limit_days": 21,
+    "designated_officer": "Tahsildar",
+    "first_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "second_appellate_officer": "Additional Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 15,
+    "service_name": "Minority Certificate",
+    "department": "Revenue Department",
+    "category": "Social Welfare",
+    "time_limit_days": 15,
+    "designated_officer": "Sub-Divisional Officer (SDO) / Tahsildar",
+    "first_appellate_officer": "Additional Collector",
+    "second_appellate_officer": "District Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 16,
+    "service_name": "Certified Copy of Mutation Entry",
+    "department": "Revenue Department",
+    "category": "Land Records",
+    "time_limit_days": 5,
+    "designated_officer": "Circle Officer",
+    "first_appellate_officer": "Tahsildar",
+    "second_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 17,
+    "service_name": "Attestation of Affidavit",
+    "department": "Revenue Department",
+    "category": "Certificates",
+    "time_limit_days": 1,
+    "designated_officer": "Executive Magistrate / Nayab Tahsildar",
+    "first_appellate_officer": "Tahsildar",
+    "second_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 18,
+    "service_name": "Land Valuation Certificate",
+    "department": "Revenue Department",
+    "category": "Land Records",
+    "time_limit_days": 15,
+    "designated_officer": "Tahsildar",
+    "first_appellate_officer": "Sub-Divisional Officer (SDO)",
+    "second_appellate_officer": "District Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 19,
+    "service_name": "Permission for Non-Agricultural Assessment",
+    "department": "Revenue Department",
+    "category": "Land Records",
+    "time_limit_days": 30,
+    "designated_officer": "Sub-Divisional Officer (SDO) / Collector",
+    "first_appellate_officer": "Additional Collector",
+    "second_appellate_officer": "Divisional Commissioner",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  },
+  {
+    "id": 20,
+    "service_name": "Public Event and Loudspeaker Permission",
+    "department": "Revenue Department",
+    "category": "General Administration",
+    "time_limit_days": 5,
+    "designated_officer": "Sub-Divisional Magistrate / Executive Magistrate",
+    "first_appellate_officer": "Additional Collector",
+    "second_appellate_officer": "District Collector",
+    "source_url": "https://aaplesarkar.mahaonline.gov.in"
+  }
+]
