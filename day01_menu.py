@@ -1,5 +1,4 @@
 # Day 01 - AapleSeva Menu Driven Program
-
 while True:
     print("\n" + "=" * 40)
     print("         AAPLESEVA MAIN MENU")
