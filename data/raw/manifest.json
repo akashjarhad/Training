@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-11-07T01:16:17+00:00",
+  "base_url": "https://aaplesarkar.mahaonline.gov.in",
+  "summary": {
+    "requested": 5,
+    "downloaded": 5,
+    "cached": 0,
+    "failed": 0
+  },
+  "documents": [
+    {
+      "key": "ns_service_list",
+      "filename": "NS_Service_List.pdf",
+      "url": "https://aaplesarkar.mahaonline.gov.in/pdf/NS_Service_List.pdf",
+      "final_url": "https://aaplesarkar.mahaonline.gov.in/pdf/NS_Service_List.pdf",
+      "kind": "pdf",
+      "description": "Notified Services List (as of 31 March 2025) - primary dataset",
+      "status": "ok",
+      "http_status": 200,
+      "bytes": 1835225,
+      "sha256": "b3de73d23f4f4f8cede77890e76e62bca13193c5d53255b77f3edae47031e871",
+      "fetched_at": "2026-11-07T01:16:06+00:00",
+      "attempts": 1
+    },
+    {
+      "key": "rts_act_page",
+      "filename": "RigthToServiceAct.html",
+      "url": "https://aaplesarkar.mahaonline.gov.in/en/CommonForm/RigthToServiceAct",
+      "final_url": "https://aaplesarkar.mahaonline.gov.in/en/CommonForm/RigthToServiceAct",
+      "kind": "html",
+      "description": "Right to Public Services Act landing page (lists every document)",
+      "status": "ok",
+      "http_status": 200,
+      "bytes": 79996,
+      "sha256": "69de2e966c96e7d42dd96bef39e5da38b300b7684f04779ef13e0ffa9f7d03d6",
+      "fetched_at": "2026-11-07T01:16:06+00:00",
+      "attempts": 1
+    },
+    {
+      "key": "act",
+      "filename": "RTS_Act_2015.pdf",
+      "url": "https://aaplesarkar.mahaonline.gov.in/pdf/RTS_21-8-2015.pdf",
+      "final_url": "https://aaplesarkar.mahaonline.gov.in/pdf/RTS_21-8-2015.pdf",
+      "kind": "pdf",
+      "description": "Maharashtra Right to Public Services Act, 2015",
+      "status": "ok",
+      "http_status": 200,
+      "bytes": 268783,
+      "sha256": "9a0fd5d9ea1a32c6a940086d7f8e5b7077d0bb713c45806e5e5fd3254d8963ee",
+      "fetched_at": "2026-11-07T01:16:07+00:00",
+      "attempts": 1
+    },
+    {
+      "key": "rules",
+      "filename": "RTS_Rules_Gazette.pdf",
+      "url": "https://aaplesarkar.mahaonline.gov.in/pdf/RTS_Rules_Gazette.pdf",
+      "final_url": "https://aaplesarkar.mahaonline.gov.in/pdf/RTS_Rules_Gazette.pdf",
+      "kind": "pdf",
+      "description": "Right to Public Services Rules (gazette notification)",
+      "status": "ok",
+      "http_status": 200,
+      "bytes": 174904,
+      "sha256": "f97159abe633a945d1f6505d4a02a71b3ac16eb021d335302c4e5aea0cd394e7",
+      "fetched_at": "2026-11-07T01:16:08+00:00",
+      "attempts": 1
+    },
+    {
+      "key": "faq_en",
+      "filename": "RTS_FAQ_English.pdf",
+      "url": "https://aaplesarkar.mahaonline.gov.in/pdf/FAQ-English-22-11-2021.pdf",
+      "final_url": "https://aaplesarkar.mahaonline.gov.in/pdf/FAQ-English-22-11-2021.pdf",
+      "kind": "pdf",
+      "description": "Frequently asked questions on the Act (English)",
+      "status": "ok",
+      "http_status": 200,
+      "bytes": 8084096,
+      "sha256": "51118dcca3eac3c2ac0f307a2558991d2458fcce505714138080c3d62d936fed",
+      "fetched_at": "2026-11-07T01:16:17+00:00",
+      "attempts": 1
+    }
+  ]
+}

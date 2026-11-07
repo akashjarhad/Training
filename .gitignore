@@ -29,3 +29,9 @@ htmlcov/
 *.swp
 *.swo
 
+# Downloaded source documents (~10 MB of government PDFs).
+# Re-fetch them with:  python -m app.fetch
+# manifest.json is tracked so each download stays reproducible and checksummed.
+data/raw/*
+!data/raw/manifest.json
+

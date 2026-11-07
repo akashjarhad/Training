@@ -1,5 +1,13 @@
 # AapleSeva Citizen Services Assistant
-# Python 3.10+ standard library is used for core records and CLI modules.
-# Optional dev dependencies:
-pytest>=8.0.0
+#
+# Core modules (app/records.py, app/cli.py, app/models.py) use only the
+# Python 3.10+ standard library.
+#
+# app/fetch.py downloads source documents over HTTP:
+requests>=2.31.0
 
+# app/ingest.py extracts the notified service table out of NS_Service_List.pdf:
+pypdf>=4.0.0
+
+# Dev dependencies:
+pytest>=8.0.0
