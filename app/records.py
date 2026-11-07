@@ -91,3 +91,4 @@ def get_by_id(records: list[dict], record_id: int | str) -> dict | None:
             return r
 
     return None
+
