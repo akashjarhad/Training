@@ -295,3 +295,4 @@ if __name__ == "__main__":
     for s in caste_services:
         print(f"  [ID {s['id']}] {s['service_name']} (Officer: {s['designated_officer']})")
     print()
+
