@@ -30,7 +30,12 @@ sanjivani-sj-13-aapleseva/
 │   ├── models.py            # Record dataclass
 │   ├── fetch.py             # Downloads the source documents into data/raw/
 │   ├── ingest.py            # Cleans the raw PDF into data/records.json
+│   ├── smart_search.py      # TF-IDF + cosine ranker that powers /search
+│   ├── main.py              # FastAPI service (/health, /records, /search, /questions)
 │   └── cli.py               # Interactive CLI and flag-based interface
+├── analysis/
+│   ├── __init__.py          # Package initializer
+│   └── explore.py           # pandas facts about the record set
 └── tests/
     └── test_records.py      # Unit tests for core record functions
 ```
@@ -71,6 +76,9 @@ Each record captures: `id`, `service_name`, `department`, `category`, `time_limi
 # Windows
 python -m venv .venv
 .\.venv\Scripts\activate
+
+# Install all dependencies (records core, fetch/ingest, FastAPI, search, analysis)
+python -m pip install -r requirements.txt
 ```
 
 ### S1 Demo:
@@ -102,6 +110,72 @@ python app/cli.py --count category
 ### Run Tests:
 ```bash
 python tests/test_records.py
+```
+
+---
+
+## S3: FastAPI Service (`app/main.py`)
+
+An HTTP API over the AapleSeva record set, with smart (TF-IDF + cosine) search.
+
+### Run the server:
+```bash
+python -m uvicorn app.main:app --reload
+# open http://127.0.0.1:8000/docs for the interactive Swagger UI
+```
+
+### Endpoints:
+| Method | Path | Description |
+|---|---|---|
+| GET | `/health` | Liveness check + number of loaded records |
+| GET | `/records?limit=N` | List records, optionally capped with `limit` |
+| GET | `/records/{id}` | Fetch one record; `404` when the id is unknown |
+| GET | `/search?q=<query>&top_k=N` | TF-IDF + cosine ranking of records to `q` |
+| POST | `/questions` | Submit a citizen question (stored in `data/questions.json`) |
+
+### Examples:
+```bash
+# Liveness
+curl "http://127.0.0.1:8000/health"
+
+# First 5 records
+curl "http://127.0.0.1:8000/records?limit=5"
+
+# One record by id
+curl "http://127.0.0.1:8000/records/4"
+
+# Missing id -> 404
+curl -i "http://127.0.0.1:8000/records/999"
+
+# Smart search (ranks best matches first)
+curl "http://127.0.0.1:8000/search?q=caste%20certificate&top_k=5"
+
+# Submit a question
+curl -X POST "http://127.0.0.1:8000/questions" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"question\":\"What documents are needed for an income certificate?\",\"name\":\"Riya\",\"service_id\":2}"
+```
+
+`/search` is powered by `app/smart_search.py`: it fits a TF-IDF vectoriser over each
+record's searchable text (service name, department, category, officers) and ranks by
+cosine similarity to the query, so multi-word queries still surface relevant records
+even when no single record contains the whole phrase. An empty `q` returns all records
+unranked, matching the CLI's substring search behaviour.
+
+---
+
+## S3: Data Analysis (`analysis/explore.py`)
+
+Quick pandas exploration of the record set. Prints three labelled facts: dataset
+scale (services / departments / categories), the most common category with the full
+breakdown, and the statutory time-limit profile.
+
+```bash
+# Default dataset (data/sample_records.json)
+python -m analysis.explore
+
+# Point at the 1058-row real dataset instead
+python -m analysis.explore --file data/records.json
 ```
 
 ---

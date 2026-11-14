@@ -35,3 +35,7 @@ htmlcov/
 data/raw/*
 !data/raw/manifest.json
 
+# Runtime-generated citizen questions submitted via the FastAPI /questions
+# endpoint. Not source data, so it stays out of version control.
+data/questions.json
+
