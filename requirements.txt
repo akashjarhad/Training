@@ -19,5 +19,8 @@ scikit-learn>=1.3.0
 # analysis/explore.py - quick pandas analysis of the record set (S2):
 pandas>=2.0.0
 
+# app/llm.py + POST /chat - Groq/Gemini provider wrapper and .env loading:
+python-dotenv>=1.0.0
+
 # Dev dependencies:
 pytest>=8.0.0

@@ -13,17 +13,21 @@ Endpoints
 - GET  /records/{id}       -> one record, 404 when the id is unknown
 - GET  /search?q=...       -> TF-IDF + cosine ranking that powers smart search
 - POST /questions          -> submit a citizen question (persisted to a JSON file)
+- POST /chat               -> ask the AapleSeva LLM assistant (answer, confidence, follow_up)
 """
 
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from app.llm import get_provider
 from app.records import get_by_id, load_records
 from app.smart_search import SmartSearch
 
@@ -32,7 +36,8 @@ app = FastAPI(
     title="AapleSeva Citizen Services API",
     description=(
         "HTTP service over the AapleSeva notified services dataset, exposing "
-        "record lookup, smart (TF-IDF) search, and a citizen question endpoint."
+        "record lookup, smart (TF-IDF) search, a citizen question endpoint, and "
+        "an LLM chat assistant."
     ),
     version="1.0.0",
 )
@@ -60,6 +65,21 @@ class QuestionCreate(BaseModel):
     )
 
 
+class ChatRequest(BaseModel):
+    """Body for ``POST /chat``."""
+
+    question: str = Field(..., min_length=1, description="The citizen's question.")
+    provider: str | None = Field(
+        default=None, description="groq or gemini; defaults to LLM_PROVIDER env."
+    )
+    top_k: int = Field(
+        default=5, ge=1, le=20, description="Records to retrieve as context."
+    )
+    prompt_version: Literal["v1", "v2"] = Field(
+        default="v1", description="Which task prompt to use."
+    )
+
+
 # --------------------------------------------------------------------------- #
 # Question persistence (plain JSON file, fine for a demo service)
 # --------------------------------------------------------------------------- #
@@ -75,6 +95,69 @@ def _save_questions(questions: list[dict]) -> None:
     QUESTIONS_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(QUESTIONS_PATH, "w", encoding="utf-8") as fh:
         json.dump(questions, fh, indent=2, ensure_ascii=False)
+
+
+# --------------------------------------------------------------------------- #
+# Chat (LLM) helpers
+# --------------------------------------------------------------------------- #
+PROMPTS_DIR = Path(__file__).resolve().parent.parent / "prompts"
+
+
+def _load_prompt(name: str) -> str:
+    """Read ``prompts/<name>.md`` as raw text."""
+    path = PROMPTS_DIR / f"{name}.md"
+    if not path.exists():
+        raise HTTPException(
+            status_code=500, detail=f"prompt file not found: {path.name}"
+        )
+    return path.read_text(encoding="utf-8")
+
+
+def _fill_prompt(template: str, context: str, question: str) -> str:
+    """Replace ``{context}`` and ``{question}`` placeholders.
+
+    Uses ``str.replace`` rather than ``str.format`` so the prompt template may
+    contain literal JSON braces (e.g. example output) without escaping.
+    """
+    return template.replace("{context}", context).replace("{question}", question)
+
+
+def _records_to_context(records: list[dict]) -> str:
+    """Render retrieved records as compact JSON for the LLM context window."""
+    rows = [
+        {
+            "id": r.get("id"),
+            "service_name": r.get("service_name"),
+            "department": r.get("department"),
+            "category": r.get("category"),
+            "time_limit_days": r.get("time_limit_days"),
+            "designated_officer": r.get("designated_officer"),
+            "first_appellate_officer": r.get("first_appellate_officer"),
+            "source_url": r.get("source_url"),
+        }
+        for r in records
+    ]
+    return json.dumps(rows, ensure_ascii=False, indent=2) if rows else "[]"
+
+
+def _extract_json(text: str) -> dict:
+    """Tolerantly pull a JSON object out of an LLM response.
+
+    Handles code-fenced output and extra prose around the JSON; returns ``{}``
+    if no parseable object is found.
+    """
+    if not text:
+        return {}
+    fence = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if fence:
+        text = fence.group(1)
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
+            return {}
+    return {}
 
 
 # --------------------------------------------------------------------------- #
@@ -151,3 +234,49 @@ def submit_question(payload: QuestionCreate) -> dict:
     questions.append(stored)
     _save_questions(questions)
     return {"status": "accepted", "question": stored}
+
+
+@app.post("/chat", summary="Ask the AapleSeva assistant a question")
+def chat(payload: ChatRequest) -> dict:
+    """Answer a citizen question with an LLM, grounded in retrieved records.
+
+    Retrieves the top records for the question (RAG), fills the chosen task
+    prompt with them, calls the configured LLM provider, and returns the
+    parsed JSON: ``answer``, ``confidence`` and ``follow_up``.
+    """
+    try:
+        provider = get_provider(payload.provider)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    ranked = SEARCH.rank(payload.question, top_k=payload.top_k)
+    retrieved = [record for record, _ in ranked]
+    context = _records_to_context(retrieved)
+
+    system = _load_prompt("system")
+    task = _load_prompt(f"task_answer_{payload.prompt_version}")
+    user_content = _fill_prompt(task, context=context, question=payload.question)
+    messages = [
+        {"role": "system", "content": system},
+        {"role": "user", "content": user_content},
+    ]
+
+    try:
+        llm_resp = provider.chat(messages)
+    except Exception as exc:  # network / auth / provider errors
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM call failed: {exc}. Set LLM_MOCK=1 for offline testing.",
+        )
+
+    parsed = _extract_json(llm_resp.text)
+    return {
+        "answer": parsed.get("answer", llm_resp.text),
+        "confidence": parsed.get("confidence", "unknown"),
+        "follow_up": parsed.get("follow_up", ""),
+        "provider": llm_resp.provider,
+        "model": llm_resp.model,
+        "mock": llm_resp.mock,
+        "prompt_version": payload.prompt_version,
+        "retrieved": [r.get("id") for r in retrieved],
+    }

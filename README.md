@@ -13,7 +13,8 @@
 
 ```text
 sanjivani-sj-13-aapleseva/
-├── .gitignore               # Ignored files (.venv, __pycache__, data/raw binaries)
+├── .gitignore               # Ignored files (.venv, __pycache__, data/raw binaries, .env)
+├── .env.example             # Tracked template for LLM API keys (.env itself is gitignored)
 ├── requirements.txt         # Project requirements
 ├── README.md                # Project card and documentation
 ├── day01_intro.py           # Day 01: Project card with variables & f-strings
@@ -31,11 +32,21 @@ sanjivani-sj-13-aapleseva/
 │   ├── fetch.py             # Downloads the source documents into data/raw/
 │   ├── ingest.py            # Cleans the raw PDF into data/records.json
 │   ├── smart_search.py      # TF-IDF + cosine ranker that powers /search
-│   ├── main.py              # FastAPI service (/health, /records, /search, /questions)
+│   ├── llm.py               # Groq/Gemini provider wrapper that powers /chat
+│   ├── main.py              # FastAPI service (/health, /records, /search, /questions, /chat)
 │   └── cli.py               # Interactive CLI and flag-based interface
+├── prompts/
+│   ├── system.md            # AapleSeva assistant system prompt
+│   ├── task_answer_v1.md    # Task prompt v1 (direct grounded answer)
+│   └── task_answer_v2.md    # Task prompt v2 (check-then-answer)
 ├── analysis/
 │   ├── __init__.py          # Package initializer
 │   └── explore.py           # pandas facts about the record set
+├── docs/
+│   ├── how_llms_work.md     # How LLMs work (own words, 1 diagram)
+│   └── questions.md         # 10 real AapleSeva citizen questions
+├── eval/
+│   └── prompt_compare.md    # Compares prompt v1 vs v2 on the 10 questions
 └── tests/
     └── test_records.py      # Unit tests for core record functions
 ```
@@ -132,6 +143,7 @@ python -m uvicorn app.main:app --reload
 | GET | `/records/{id}` | Fetch one record; `404` when the id is unknown |
 | GET | `/search?q=<query>&top_k=N` | TF-IDF + cosine ranking of records to `q` |
 | POST | `/questions` | Submit a citizen question (stored in `data/questions.json`) |
+| POST | `/chat` | Ask the AapleSeva LLM assistant; returns `answer`, `confidence`, `follow_up` |
 
 ### Examples:
 ```bash
@@ -177,6 +189,49 @@ python -m analysis.explore
 # Point at the 1058-row real dataset instead
 python -m analysis.explore --file data/records.json
 ```
+
+---
+
+## S5: LLM Chat Assistant (`POST /chat`)
+
+`app/llm.py` wraps two providers — **Groq** and **Google Gemini** — both through
+their OpenAI-compatible Chat Completions endpoint, so no provider SDK is needed.
+`POST /chat` retrieves the most relevant records for the question (RAG via the
+TF-IDF search), fills a task prompt from `prompts/`, calls the LLM, and returns
+parsed JSON: `answer`, `confidence`, `follow_up`.
+
+### Configure keys
+```bash
+cp .env.example .env      # then add a Groq or Gemini API key
+# .env is gitignored and never committed; .env.example is the tracked template.
+```
+
+Run without keys (canned responses, for dev/demo):
+```bash
+# Windows PowerShell
+$env:LLM_MOCK="1"; python -m uvicorn app.main:app --reload
+```
+
+### Use it
+```bash
+curl -X POST http://127.0.0.1:8000/chat -H "Content-Type: application/json" ^
+  -d "{\"question\":\"Which department handles income certificates?\"}"
+```
+
+Response: `{"answer":"...","confidence":"high","follow_up":"...","provider":"groq","model":"...","prompt_version":"v1","retrieved":[2],...}`
+
+Pick a provider or prompt version per call:
+```json
+{"question":"...", "provider":"gemini", "prompt_version":"v2", "top_k":5}
+```
+
+### Prompts (`prompts/`) and evaluation (`eval/`)
+- `system.md` — the AapleSeva Mitra system prompt (persona + JSON output rules).
+- `task_answer_v1.md` — direct grounded answer.
+- `task_answer_v2.md` — check-then-answer (field check before answering).
+
+See `eval/prompt_compare.md` for a comparison of v1 vs v2 across the 10 citizen
+questions in `docs/questions.md`.
 
 ---
 
