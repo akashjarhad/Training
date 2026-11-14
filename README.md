@@ -164,7 +164,7 @@ unranked, matching the CLI's substring search behaviour.
 
 ---
 
-## S3: Data Analysis (`analysis/explore.py`)
+## S4: Data Analysis (`analysis/explore.py`)
 
 Quick pandas exploration of the record set. Prints three labelled facts: dataset
 scale (services / departments / categories), the most common category with the full
