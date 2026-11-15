@@ -88,6 +88,38 @@ DOCUMENTS = [
         "kind": "pdf",
         "description": "Frequently asked questions on the Act (English)",
     },
+    # Per-department notifications issued under Section 3(1) of the Act. These
+    # are the only public source for the stipulated time limit and the
+    # designated / appellate officers, which NS_Service_List.pdf omits.
+    # They are published in English with correctly encoded text, so records
+    # parsed from them are also free of the Marathi legacy-font corruption.
+    # Parsed by app/proforma.py.
+    {
+        "key": "proforma_water",
+        "filename": "RTS_Notified_Water_Supply.pdf",
+        "url": (
+            "https://cdnbbsr.s3waas.gov.in/s3347665597cbfaef834886adbb848011f/"
+            "uploads/2025/01/20250125444972277.pdf"
+        ),
+        "kind": "pdf",
+        "description": (
+            "Notified services with time limits and officers - "
+            "Water Supply and Sanitation Department"
+        ),
+    },
+    {
+        "key": "proforma_food",
+        "filename": "RTS_Notified_Food_Civil_Supplies.pdf",
+        "url": (
+            "https://cdnbbsr.s3waas.gov.in/s3e21e4e58ad9ab56e8a4634046da90113/"
+            "uploads/2025/05/20250514954122339.pdf"
+        ),
+        "kind": "pdf",
+        "description": (
+            "Notified services with time limits and officers - "
+            "Food, Civil Supplies and Consumer Protection Department"
+        ),
+    },
 ]
 
 

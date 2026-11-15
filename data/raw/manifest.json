@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-11-07T01:16:17+00:00",
+  "generated_at": "2026-11-15T05:02:49+00:00",
   "base_url": "https://aaplesarkar.mahaonline.gov.in",
   "summary": {
-    "requested": 5,
+    "requested": 7,
     "downloaded": 5,
-    "cached": 0,
+    "cached": 2,
     "failed": 0
   },
   "documents": [
@@ -19,7 +19,7 @@
       "http_status": 200,
       "bytes": 1835225,
       "sha256": "b3de73d23f4f4f8cede77890e76e62bca13193c5d53255b77f3edae47031e871",
-      "fetched_at": "2026-11-07T01:16:06+00:00",
+      "fetched_at": "2026-11-15T05:02:33+00:00",
       "attempts": 1
     },
     {
@@ -33,7 +33,7 @@
       "http_status": 200,
       "bytes": 79996,
       "sha256": "69de2e966c96e7d42dd96bef39e5da38b300b7684f04779ef13e0ffa9f7d03d6",
-      "fetched_at": "2026-11-07T01:16:06+00:00",
+      "fetched_at": "2026-11-15T05:02:33+00:00",
       "attempts": 1
     },
     {
@@ -47,7 +47,7 @@
       "http_status": 200,
       "bytes": 268783,
       "sha256": "9a0fd5d9ea1a32c6a940086d7f8e5b7077d0bb713c45806e5e5fd3254d8963ee",
-      "fetched_at": "2026-11-07T01:16:07+00:00",
+      "fetched_at": "2026-11-15T05:02:33+00:00",
       "attempts": 1
     },
     {
@@ -61,7 +61,7 @@
       "http_status": 200,
       "bytes": 174904,
       "sha256": "f97159abe633a945d1f6505d4a02a71b3ac16eb021d335302c4e5aea0cd394e7",
-      "fetched_at": "2026-11-07T01:16:08+00:00",
+      "fetched_at": "2026-11-15T05:02:33+00:00",
       "attempts": 1
     },
     {
@@ -75,8 +75,28 @@
       "http_status": 200,
       "bytes": 8084096,
       "sha256": "51118dcca3eac3c2ac0f307a2558991d2458fcce505714138080c3d62d936fed",
-      "fetched_at": "2026-11-07T01:16:17+00:00",
+      "fetched_at": "2026-11-15T05:02:49+00:00",
       "attempts": 1
+    },
+    {
+      "key": "proforma_water",
+      "filename": "RTS_Notified_Water_Supply.pdf",
+      "url": "https://cdnbbsr.s3waas.gov.in/s3347665597cbfaef834886adbb848011f/uploads/2025/01/20250125444972277.pdf",
+      "kind": "pdf",
+      "description": "Notified services with time limits and officers - Water Supply and Sanitation Department",
+      "status": "cached",
+      "bytes": 140079,
+      "sha256": "029c920fd8179e34bd71c11dd10f517c50866408ea69a0eaa6b3818f7f1a975c"
+    },
+    {
+      "key": "proforma_food",
+      "filename": "RTS_Notified_Food_Civil_Supplies.pdf",
+      "url": "https://cdnbbsr.s3waas.gov.in/s3e21e4e58ad9ab56e8a4634046da90113/uploads/2025/05/20250514954122339.pdf",
+      "kind": "pdf",
+      "description": "Notified services with time limits and officers - Food, Civil Supplies and Consumer Protection Department",
+      "status": "cached",
+      "bytes": 300343,
+      "sha256": "632ab6da321a3cb8d3ae0d682d0f4561bf5c5c3433f5e2e0453fe91556dc00ba"
     }
   ]
 }

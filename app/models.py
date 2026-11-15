@@ -2,25 +2,30 @@
 app/models.py
 Typed model for one AapleSeva notified service record.
 
-The six target fields are the project's canonical schema. Only three of them
-are actually carried by the published source documents:
+The six target fields are the project's canonical schema. Which of them is
+populated depends on which document the record came from, because the state
+publishes its notified services in two different shapes:
 
-    service_name              <- the PDF's "सेवा" column
-    department                <- the PDF's "विभाग" column
-    source_url                <- the document the row was read from
+``NS_Service_List.pdf`` (parsed by ``app/ingest.py``) is the statewide list of
+all 1058 notified services. It has five columns and carries no time limit and
+no officer names, so records from it populate three of the six fields:
 
-The other three have no public source:
+    service_name, department, source_url
 
-    time_limit_days           not published in NS_Service_List.pdf
-    designated_officer        not published in NS_Service_List.pdf
-    first_appellate_officer   not published in NS_Service_List.pdf
+Each department also issues its own notification under Section 3(1) of the
+Act, and those tabulate exactly what the statewide list omits. Records from
+those (parsed by ``app/proforma.py``) populate all six:
 
-They stay None rather than being guessed, so a null in data/records.json
-always means "the source does not say", never "we failed to parse it".
-See docs in app/ingest.py for the full column survey.
+    service_name, department, source_url,
+    time_limit_days, designated_officer, first_appellate_officer
+
+Where a source is silent the field stays None rather than being guessed, so a
+null in data/records.json always means "this document does not say", never
+"we failed to parse it". Use ``is_complete()`` / ``missing_fields()`` to tell
+the two kinds of record apart.
 """
 
-from dataclasses import dataclass, field, asdict, fields
+from dataclasses import dataclass, asdict, fields
 
 
 @dataclass
@@ -35,12 +40,23 @@ class Record:
     first_appellate_officer: str | None = None
     source_url: str = ""
 
-    # --- extra columns the source genuinely publishes ---
-    # `id` mirrors the PDF's serial number (अ.क्र) and keeps records.json
-    # compatible with app.records.get_by_id().
+    # --- extra columns the sources genuinely publish ---
+    # `id` mirrors the statewide PDF's serial number (अ.क्र) and keeps
+    # records.json compatible with app.records.get_by_id().
     id: int | None = None
     sub_department: str | None = None
     available_on_portal: bool | None = None
+
+    # The department proformas also name a second appellate authority, and
+    # state the time limit in prose that does not always reduce to one number
+    # ("30 Days if home visit is required otherwise 03 Working Days"), so the
+    # wording is kept alongside the parsed integer.
+    second_appellate_officer: str | None = None
+    time_limit_text: str | None = None
+
+    # Provenance: which document and which page of it this row came from.
+    source_page: int | None = None
+    text_quality: str | None = None
 
     def __post_init__(self):
         """Normalise and validate the fields. Raises ValueError on a bad row."""
@@ -52,8 +68,18 @@ class Record:
         self.department = _clean_text(self.department)
         self.designated_officer = _clean_text(self.designated_officer)
         self.first_appellate_officer = _clean_text(self.first_appellate_officer)
+        self.second_appellate_officer = _clean_text(self.second_appellate_officer)
         self.sub_department = _clean_text(self.sub_department)
+        self.time_limit_text = _clean_text(self.time_limit_text)
         self.source_url = _clean_text(self.source_url) or ""
+
+        if self.source_page is not None:
+            try:
+                self.source_page = int(self.source_page)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"source_page must be a whole number, got {self.source_page!r}"
+                ) from exc
 
         if self.time_limit_days is not None:
             try:

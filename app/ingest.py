@@ -68,6 +68,7 @@ from pathlib import Path
 from pypdf import PdfReader
 
 from app.models import Record
+from app.proforma import parse_all as parse_proformas
 
 SOURCE_FILENAME = "NS_Service_List.pdf"
 SOURCE_URL = "https://aaplesarkar.mahaonline.gov.in/pdf/NS_Service_List.pdf"
@@ -341,6 +342,15 @@ def build_records(rows: list[dict]) -> tuple[list[Record], list[dict]]:
                 id=row["sr_no"],
                 sub_department=row["sub_department"],
                 available_on_portal=_parse_on_portal(row["on_portal"]),
+                source_page=row.get("page"),
+                # Flag rows whose Marathi came through the source PDF's
+                # legacy non-Unicode font, so a consumer can filter them
+                # rather than be surprised by mangled characters.
+                text_quality=(
+                    "legacy_font_corrupt"
+                    if _looks_mangled(row["service_name"])
+                    else "ok"
+                ),
             )
             records.append(record)
 
@@ -393,11 +403,18 @@ def diagnose(records: list[Record], skipped: list[dict]) -> dict:
         )
         coverage[name] = filled
 
+    # The expected-count check applies only to the statewide list; the
+    # department proformas add further records on top of it.
+    statewide = [r for r in records if r.source_url == SOURCE_URL]
+    complete = [r for r in records if r.is_complete()]
+
     return {
         "records": len(records),
+        "statewide": len(statewide),
+        "complete": len(complete),
         "skipped": len(skipped),
         "expected": EXPECTED_SERVICE_COUNT,
-        "matches_expected": len(records) == EXPECTED_SERVICE_COUNT,
+        "matches_expected": len(statewide) == EXPECTED_SERVICE_COUNT,
         "serial_range": [min(ids), max(ids)] if ids else None,
         "contiguous": ids == sorted(ids) and missing_ids == [] and duplicate_ids == [],
         "missing_serial_numbers": missing_ids,
@@ -412,8 +429,19 @@ def diagnose(records: list[Record], skipped: list[dict]) -> dict:
     }
 
 
-def ingest(raw_dir=None, limit=None) -> tuple[list[Record], list[dict]]:
-    """Read the raw PDF and return (records, skipped_rows)."""
+def ingest(raw_dir=None, limit=None, with_proformas=True):
+    """
+    Build the full record set.
+
+    Combines two kinds of source:
+
+    * ``NS_Service_List.pdf`` - the statewide list of all notified services.
+      Broad but shallow: no time limits, no officer names.
+    * the per-department proformas parsed by ``app/proforma.py`` - narrow but
+      complete, carrying all six target fields.
+
+    Returns (records, skipped_rows).
+    """
     pdf_path = get_raw_path(raw_dir)
     if not pdf_path.exists():
         raise FileNotFoundError(
@@ -424,7 +452,26 @@ def ingest(raw_dir=None, limit=None) -> tuple[list[Record], list[dict]]:
     rows = group_rows(lines)
     if limit is not None:
         rows = rows[:limit]
-    return build_records(rows)
+    records, skipped = build_records(rows)
+
+    if with_proformas:
+        try:
+            extra, extra_skipped = parse_proformas(raw_dir)
+        except Exception as exc:
+            # The statewide list is still worth having on its own.
+            print(
+                f"  warning: department proformas unavailable ({type(exc).__name__}: {exc})",
+                file=sys.stderr,
+            )
+        else:
+            # Continue the id sequence so ids stay unique across sources.
+            next_id = max((r.id or 0 for r in records), default=0) + 1
+            for offset, record in enumerate(extra):
+                record.id = next_id + offset
+            records.extend(extra)
+            skipped.extend(extra_skipped)
+
+    return records, skipped
 
 
 def save_records(records: list[Record], out_path=None) -> Path:
@@ -488,10 +535,12 @@ def main(argv=None) -> int:
     print(f"  skipped  {report['skipped']} rows")
     print(f"  serials  {report['serial_range'][0]}..{report['serial_range'][1]}"
           f" (contiguous: {report['contiguous']})")
+    print(f"  statewide {report['statewide']} | complete {report['complete']}"
+          f" (all six fields)")
     if args.limit is None and not report["matches_expected"]:
         print(
-            f"  WARNING: expected {report['expected']} services but parsed "
-            f"{report['records']}. The source layout may have changed.",
+            f"  WARNING: expected {report['expected']} services in the statewide "
+            f"list but parsed {report['statewide']}. Its layout may have changed.",
             file=sys.stderr,
         )
     if report["missing_serial_numbers"]:
@@ -517,7 +566,12 @@ def main(argv=None) -> int:
         )
 
     for row in skipped[:5]:
-        print(f"  skipped sr_no={row['sr_no']} page={row['page']}: {row['reason']}")
+        # Rows skipped by app/proforma.py carry no serial number, so read
+        # every key defensively.
+        print(
+            f"  skipped sr_no={row.get('sr_no')} page={row.get('page')}: "
+            f"{row.get('reason')}"
+        )
 
     if args.report:
         print()

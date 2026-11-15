@@ -325,3 +325,77 @@ number, which also makes `records.json` work with `app.records.get_by_id`),
   description runs to twenty-odd lines the last line or two can be read as
   the start of the next service (serial 1018 is the clearest case). The
   department, sub-department, portal flag and serial numbers are unaffected.
+
+---
+
+## Complete records: time limits and officers
+
+The first version of this pipeline left `time_limit_days`,
+`designated_officer` and `first_appellate_officer` `null` in every record,
+because `NS_Service_List.pdf` — the statewide list of all 1058 notified
+services — has only five columns and publishes none of them.
+
+Those three fields *are* published, just in a different document. Every
+department issues its own notification under Section 3(1) of the Act, and
+those tabulate exactly what the statewide list omits:
+
+```
+Sr. | Office/Department | Public Service Details | Time limit |
+Designated Officer | First Appellate Authority | Second Appellate Authority
+```
+
+`app/proforma.py` parses those notifications. `data/records.json` now holds:
+
+| | records |
+|---|---|
+| statewide list (`NS_Service_List.pdf`) | 1058 |
+| department proformas | 32 |
+| **total** | **1090** |
+| **of which complete — all six target fields** | **30** |
+
+A complete record looks like this:
+
+```json
+{
+  "service_name": "New water connection",
+  "department": "Water Supply and Sanitation Department",
+  "time_limit_days": 15,
+  "designated_officer": "Executive Engineer In Charge of Water Works",
+  "first_appellate_officer": "Superinutending engineer",
+  "second_appellate_officer": "Chief Engineer",
+  "time_limit_text": "15 days",
+  "source_page": 2
+}
+```
+
+Departments parsed so far: Water Supply and Sanitation (18 services), and
+Food, Civil Supplies and Consumer Protection (14 services). Adding another
+department is one entry in `PROFORMAS` in `app/proforma.py` plus one in
+`DOCUMENTS` in `app/fetch.py` — the column boundaries are detected from each
+document's own header, so no per-document tuning is needed.
+
+### On the garbled Marathi
+
+These notifications are published in **English with correctly encoded text**,
+so all 30 complete records are free of the glyph corruption. That corruption
+is specific to the statewide Marathi PDF, which mixes the Unicode font
+*Nirmala UI* with the legacy non-Unicode *DVOT-SurekhMR*. Text set in the
+latter extracts with wrong characters (`नियम` comes out as `वनयम`).
+
+Every record now carries a `text_quality` field, so affected rows can be
+filtered rather than silently trusted:
+
+- `"ok"` — 891 records, text is reliable
+- `"legacy_font_corrupt"` — 199 records, service name has mangled glyphs
+
+```python
+clean = [r for r in records if r["text_quality"] == "ok"]
+```
+
+Repairing the legacy font itself is not a text-level substitution: its
+ToUnicode map collapses several distinct glyphs onto the same codepoint
+(both the i-matra and `ध` arrive as `व`), so the original characters cannot be
+recovered from the extracted string. It would need a font-specific glyph
+table built from the raw CIDs. Flagging the rows and sourcing the complete
+records from the English notifications addresses the same problem without
+guessing at the text.
