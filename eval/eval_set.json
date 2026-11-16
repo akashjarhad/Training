@@ -1,0 +1,110 @@
+[
+  {
+    "id": 1,
+    "question": "What is the maximum time limit for issuing a caste certificate in Maharashtra?",
+    "expected_contains": ["15 days", "caste certificate"],
+    "expected_source": "RTS_Notified",
+    "category": "time_limit"
+  },
+  {
+    "id": 2,
+    "question": "Which department is responsible for water supply services under the Right to Service Act?",
+    "expected_contains": ["water supply", "department"],
+    "expected_source": "RTS_Notified_Water_Supply",
+    "category": "department"
+  },
+  {
+    "id": 3,
+    "question": "What are the three levels of appellate authority under the RTS Act?",
+    "expected_contains": ["designated officer", "appellate", "state"],
+    "expected_source": "RTS_Act_2015",
+    "category": "appellate_authority"
+  },
+  {
+    "id": 4,
+    "question": "How many days do I have to file an appeal if my service request is denied?",
+    "expected_contains": ["30 days", "appeal"],
+    "expected_source": "RTS_Act_2015",
+    "category": "time_limit"
+  },
+  {
+    "id": 5,
+    "question": "What services are available on the AapleSeva portal?",
+    "expected_contains": ["services", "notified"],
+    "expected_source": "NS_Service_List",
+    "category": "service_info"
+  },
+  {
+    "id": 6,
+    "question": "What is the penalty for officials who delay services beyond the mandated time?",
+    "expected_contains": ["I don't know", "not available", "no information"],
+    "expected_source": null,
+    "category": "negative_case",
+    "note": "This information is NOT in the documents; LLM must say 'I don't know'"
+  },
+  {
+    "id": 7,
+    "question": "Who is the designated officer for new water connections?",
+    "expected_contains": ["designated officer", "water connection"],
+    "expected_source": "RTS_Notified_Water_Supply",
+    "category": "officer_info"
+  },
+  {
+    "id": 8,
+    "question": "What documents are required to apply for a ration card?",
+    "expected_contains": ["ration card", "documents", "food"],
+    "expected_source": "RTS_Notified_Food_Civil_Supplies",
+    "category": "document_requirements"
+  },
+  {
+    "id": 9,
+    "question": "How do I track the status of my submitted application?",
+    "expected_contains": ["I don't know", "not available", "portal"],
+    "expected_source": null,
+    "category": "negative_case",
+    "note": "Tracking process not detailed in the documents"
+  },
+  {
+    "id": 10,
+    "question": "What is the time limit for issuing a domicile certificate?",
+    "expected_contains": ["15 days", "domicile"],
+    "expected_source": "RTS_Notified",
+    "category": "time_limit"
+  },
+  {
+    "id": 11,
+    "question": "What is the definition of 'service' under the RTS Act?",
+    "expected_contains": ["service", "notified", "section"],
+    "expected_source": "RTS_Act_2015",
+    "category": "definition"
+  },
+  {
+    "id": 12,
+    "question": "Who can file a complaint if service is not provided within the time limit?",
+    "expected_contains": ["applicant", "appeal", "first appellate"],
+    "expected_source": "RTS_Act_2015",
+    "category": "procedural"
+  },
+  {
+    "id": 13,
+    "question": "What are the responsibilities of a designated officer?",
+    "expected_contains": ["designated officer", "service", "time limit"],
+    "expected_source": "RTS_Act_2015",
+    "category": "officer_responsibilities"
+  },
+  {
+    "id": 14,
+    "question": "How is the Right to Service Act different from RTI?",
+    "expected_contains": ["I don't know", "not available"],
+    "expected_source": null,
+    "category": "negative_case",
+    "note": "Comparison with RTI is not in the documents"
+  },
+  {
+    "id": 15,
+    "question": "What is the process for new electricity connection under RTS?",
+    "expected_contains": ["electricity", "connection", "days"],
+    "expected_source": "NS_Service_List",
+    "category": "service_process"
+  }
+]

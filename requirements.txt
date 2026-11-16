@@ -22,5 +22,9 @@ pandas>=2.0.0
 # app/llm.py + POST /chat - Groq/Gemini provider wrapper and .env loading:
 python-dotenv>=1.0.0
 
+# app/chunking.py + app/embed.py + app/rag.py - semantic search + RAG:
+chromadb>=0.4.0
+pydantic>=2.0.0
+
 # Dev dependencies:
 pytest>=8.0.0

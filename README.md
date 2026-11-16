@@ -399,3 +399,77 @@ recovered from the extracted string. It would need a font-specific glyph
 table built from the raw CIDs. Flagging the rows and sourcing the complete
 records from the English notifications addresses the same problem without
 guessing at the text.
+
+---
+
+## S6: Semantic Search & RAG
+
+### Semantic Search (`GET /search/semantic`)
+
+Vector-based semantic search over document chunks using Chroma + sentence-transformers.
+
+**Setup:**
+```bash
+# Index documents (one-time)
+python -m app.embed --index
+
+# Start the API server
+python -m app.vectorstore
+```
+
+**API:**
+```bash
+# Search by meaning, not keywords
+curl "http://127.0.0.1:8000/search/semantic?q=caste%20certificate%20time%20limit&top_k=5"
+```
+
+**Architecture:**
+- **Chunking** (`app/chunking.py`): 1200 chars with 200 overlap, breaks at sentence boundaries
+- **Embedding**: sentence-transformers/all-MiniLM-L6-v2 (384 dims, local, no API key)
+- **Storage**: Persistent Chroma at `data/chroma/`
+- **Supports**: PDF + HTML, preserves source/page/title metadata
+
+See `SEMANTIC_SEARCH.md` for architecture details.
+
+### RAG - Answer Questions with Citations (`POST /ask`)
+
+Retrieves relevant chunks and uses an LLM to generate grounded answers with source citations.
+
+**API:**
+```bash
+curl -X POST http://127.0.0.1:8000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is the time limit for a caste certificate?", "top_k": 5}'
+```
+
+**Response:**
+```json
+{
+  "question": "What is the time limit for a caste certificate?",
+  "answer": "The time limit is 21 days [RTS Notified Services, page 3]",
+  "sources": [
+    {"title": "RTS Notified Services", "page": 3, "distance": 0.32}
+  ],
+  "retrieved_count": 5,
+  "provider": "groq",
+  "model": "llama-3.3-70b-versatile"
+}
+```
+
+**Key Features:**
+- **Source citations**: Every answer cites [Document, page X]
+- **Honest ignorance**: LLM says "I don't know" when context lacks answer
+- **Configurable**: top-k, provider (groq/gemini), temperature
+
+**Evaluation Framework:**
+
+15-question test set with automatic scoring:
+```bash
+python -m eval.run_eval
+```
+
+Results compare multiple configs (chunk size, top-k) and update README with winner table.
+
+See `RAG_SYSTEM.md` for implementation details.
+
+---
