@@ -14,6 +14,7 @@ Endpoints
 - GET  /search?q=...       -> TF-IDF + cosine ranking that powers smart search
 - POST /questions          -> submit a citizen question (persisted to a JSON file)
 - POST /chat               -> ask the AapleSeva LLM assistant (answer, confidence, follow_up)
+- POST /ask                -> RAG endpoint: answer with document chunk citations
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from pydantic import BaseModel, Field
 from app.llm import get_provider
 from app.records import get_by_id, load_records
 from app.smart_search import SmartSearch
+from app.rag import answer_question
 
 
 app = FastAPI(
@@ -78,6 +80,15 @@ class ChatRequest(BaseModel):
     prompt_version: Literal["v1", "v2"] = Field(
         default="v1", description="Which task prompt to use."
     )
+
+
+class AskRequest(BaseModel):
+    """Body for ``POST /ask`` (RAG endpoint)."""
+
+    question: str = Field(..., min_length=1, description="User question")
+    top_k: int = Field(5, ge=1, le=20, description="Number of chunks to retrieve")
+    provider: str | None = Field(None, description="LLM provider (groq/gemini)")
+    temperature: float = Field(0.2, ge=0.0, le=1.0, description="LLM temperature")
 
 
 # --------------------------------------------------------------------------- #
@@ -280,3 +291,40 @@ def chat(payload: ChatRequest) -> dict:
         "prompt_version": payload.prompt_version,
         "retrieved": [r.get("id") for r in retrieved],
     }
+
+
+@app.post("/ask", summary="RAG endpoint: answer with document citations")
+def ask(payload: AskRequest) -> dict:
+    """
+    RAG endpoint: answer questions using retrieved document chunks + LLM.
+    
+    Retrieves top-k relevant chunks via semantic search, sends them with the
+    question to an LLM, and returns the answer with source citations.
+    
+    The LLM is instructed to:
+    - Cite sources by [Document Title, page X]
+    - Say "I don't know" when context lacks answer
+    - Answer from context only, no external knowledge
+    
+    Returns:
+        - question: the input question
+        - answer: LLM's response with citations
+        - sources: list of {title, page, source, distance}
+        - retrieved_count: number of chunks retrieved
+        - provider: LLM provider used
+        - model: LLM model used
+        - mock: whether response was mocked
+    """
+    try:
+        result = answer_question(
+            question=payload.question,
+            top_k=payload.top_k,
+            provider=payload.provider,
+            temperature=payload.temperature,
+        )
+        return result
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"RAG query failed: {exc}",
+        )

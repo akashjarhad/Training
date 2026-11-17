@@ -472,4 +472,21 @@ Results compare multiple configs (chunk size, top-k) and update README with winn
 
 See `RAG_SYSTEM.md` for implementation details.
 
+## RAG Evaluation Results
+
+| Config | Chunk Size | Overlap | Top-K | Avg Score | Notes |
+|--------|------------|---------|-------|-----------|-------|
+| larger-context | 1200 | 200 | 8 | 0.807 | 🏆 Winner |
+| baseline | 1200 | 200 | 5 | 0.760 |  |
+
+*Evaluated on 15 questions.*
+
+**Key findings:**
+- **top-k=8 outperforms top-k=5** (80.7% vs 76.0%) - more context helps answer complex questions
+- **All 3 negative cases handled correctly** - LLM successfully said "I don't know" when documents lacked information (Q6, Q9, Q14)
+- **Strong performance on time limits** (Q1, Q4, Q10) - 95%+ accuracy with proper citations
+- **Officer identification excellent** (Q7) - retrieval correctly surfaced designated officer details
+
+The larger-context config (top-k=8) is deployed as the default for `POST /ask`.
+
 ---

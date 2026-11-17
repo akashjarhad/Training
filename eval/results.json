@@ -1,0 +1,28 @@
+[
+  {
+    "config": {
+      "name": "baseline",
+      "chunk_size": 1200,
+      "chunk_overlap": 200,
+      "top_k": 5
+    },
+    "metrics": {
+      "total_questions": 15,
+      "total_score": 11.4,
+      "average_score": 0.760
+    }
+  },
+  {
+    "config": {
+      "name": "larger-context",
+      "chunk_size": 1200,
+      "chunk_overlap": 200,
+      "top_k": 8
+    },
+    "metrics": {
+      "total_questions": 15,
+      "total_score": 12.1,
+      "average_score": 0.807
+    }
+  }
+]
