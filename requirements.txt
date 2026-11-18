@@ -26,5 +26,8 @@ python-dotenv>=1.0.0
 chromadb>=0.4.0
 pydantic>=2.0.0
 
+# app/graph.py - LangGraph agent (optional, uses dict-based graph if not installed):
+# langgraph>=0.1.0  # Uncomment to use real LangGraph instead of simulation
+
 # Dev dependencies:
 pytest>=8.0.0

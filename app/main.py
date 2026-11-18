@@ -15,6 +15,7 @@ Endpoints
 - POST /questions          -> submit a citizen question (persisted to a JSON file)
 - POST /chat               -> ask the AapleSeva LLM assistant (answer, confidence, follow_up)
 - POST /ask                -> RAG endpoint: answer with document chunk citations
+- POST /agent              -> LangGraph agent with tools (rag_search, rts_due_date) and memory
 """
 
 from __future__ import annotations
@@ -32,6 +33,8 @@ from app.llm import get_provider
 from app.records import get_by_id, load_records
 from app.smart_search import SmartSearch
 from app.rag import answer_question
+from app.graph import create_agent_graph, run_agent_graph
+from app.graph import create_agent_graph, run_agent_graph
 
 
 app = FastAPI(
@@ -89,6 +92,15 @@ class AskRequest(BaseModel):
     top_k: int = Field(5, ge=1, le=20, description="Number of chunks to retrieve")
     provider: str | None = Field(None, description="LLM provider (groq/gemini)")
     temperature: float = Field(0.2, ge=0.0, le=1.0, description="LLM temperature")
+
+
+class AgentRequest(BaseModel):
+    """Body for ``POST /agent`` (LangGraph agent endpoint)."""
+
+    query: str = Field(..., min_length=1, description="User query")
+    conversation_history: list[dict] | None = Field(
+        None, description="Previous messages for conversation memory"
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -327,4 +339,58 @@ def ask(payload: AskRequest) -> dict:
         raise HTTPException(
             status_code=500,
             detail=f"RAG query failed: {exc}",
+        )
+
+
+@app.post("/agent", summary="LangGraph agent with tools and memory")
+def agent(payload: AgentRequest) -> dict:
+    """
+    LangGraph agent endpoint: autonomous agent with tools and conversation memory.
+    
+    The agent can:
+    - Use rag_search tool for policy/document questions
+    - Use rts_due_date tool for calculating service delivery deadlines
+    - Remember conversation context across multiple turns
+    - Request approval before executing tools (human-in-the-loop)
+    
+    Request body:
+        {
+            "query": "What is the time limit for caste certificate?",
+            "conversation_history": [  // optional, for multi-turn conversations
+                {"role": "user", "content": "..."},
+                {"role": "assistant", "content": "..."}
+            ]
+        }
+    
+    Response:
+        {
+            "query": str,
+            "answer": str,              # Final answer from agent
+            "messages": list[dict],     # Full conversation history
+            "tool_calls": list[dict],   # Tools that were executed
+            "conversation_id": str      # For tracking multi-turn conversations
+        }
+    """
+    try:
+        # Create agent graph (cached in production)
+        graph = create_agent_graph()
+        
+        # Run agent
+        result = run_agent_graph(
+            graph=graph,
+            query=payload.query,
+            conversation_history=payload.conversation_history,
+        )
+        
+        return {
+            "query": payload.query,
+            "answer": result["final_answer"],
+            "messages": result["messages"],
+            "tool_calls": result["tool_calls"],
+            "conversation_id": None,  # TODO: implement session management
+        }
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Agent execution failed: {exc}",
         )
