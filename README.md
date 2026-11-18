@@ -490,3 +490,49 @@ See `RAG_SYSTEM.md` for implementation details.
 The larger-context config (top-k=8) is deployed as the default for `POST /ask`.
 
 ---
+
+## Streamlit UI with Appeal Ladder
+
+**Live Demo:** `streamlit run ui/app.py`
+
+Interactive chat interface featuring:
+- **Chat with AapleSeva**: Choose RAG (fast) or Agent (smart reasoning)
+- **Source Citations**: Expandable source cards with relevance scores
+- **Feedback**: Thumbs up/down saved to `ui/feedback.json`
+- **Appeal Ladder** 🪜: Visual timeline calculator showing:
+  - **Step 1**: Designated Officer (service delivery due date)
+  - **Step 2**: First Appellate Authority (30 days to file, 30 days to decide)
+  - **Step 3**: Second Appellate Authority (30 days to file, 30 days to decide)
+  - **Step 4**: RTS Commission (final state-level authority)
+
+Each step shows:
+- Officer name and designation
+- Date the step opens
+- Filing deadline (for appeals)
+- Status indicator (⚪ not yet open | 🟢 on time | 🟡 can appeal | 🔴 overdue)
+
+![AapleSeva Chat UI](docs/screenshots/streamlit-app.png)
+*Screenshot: Chat interface with appeal ladder for water connection service*
+
+**Usage:**
+```bash
+# Terminal 1: Start FastAPI backend
+cd Training
+python -m uvicorn app.main:app --reload
+
+# Terminal 2: Start Streamlit UI
+streamlit run ui/app.py
+# Opens at http://localhost:8501
+```
+
+**Appeal Ladder Example:**
+- Application date: 2026-11-01
+- Service: New water connection (15-day limit)
+- Service due: 2026-11-16
+- If not delivered → First appeal by 2026-12-16
+- First decision due: 2026-12-16
+- If unfavorable → Second appeal by 2027-01-15
+- Second decision due: 2027-01-15
+- Can approach RTS Commission: 2027-01-15 onwards
+
+---

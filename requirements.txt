@@ -29,5 +29,8 @@ pydantic>=2.0.0
 # app/graph.py - LangGraph agent (optional, uses dict-based graph if not installed):
 # langgraph>=0.1.0  # Uncomment to use real LangGraph instead of simulation
 
+# ui/app.py - Streamlit chat interface with appeal ladder:
+streamlit>=1.28.0
+
 # Dev dependencies:
 pytest>=8.0.0
