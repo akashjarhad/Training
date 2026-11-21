@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # FastAPI backend service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aapleseva-api
+    ports:
+      - "8000:8000"
+    environment:
+      # LLM Configuration
+      - LLM_PROVIDER=${LLM_PROVIDER:-groq}
+      - LLM_MOCK=${LLM_MOCK:-0}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_MODEL=${GROQ_MODEL:-llama-3.3-70b-versatile}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-1.5-flash}
+    volumes:
+      # Mount data directory for persistence
+      - ./data:/app/data
+      # Mount Chroma vector store
+      - chroma-data:/app/data/chroma
+    networks:
+      - aapleseva-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Streamlit UI service
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: aapleseva-ui
+    ports:
+      - "8501:8501"
+    environment:
+      # API endpoint (internal Docker network)
+      - API_BASE_URL=http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - aapleseva-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8501/_stcore/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+networks:
+  aapleseva-network:
+    driver: bridge
+
+volumes:
+  chroma-data:
+    driver: local

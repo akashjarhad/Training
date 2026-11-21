@@ -1,0 +1,19 @@
+# Hugging Face Spaces configuration
+# For deploying Streamlit UI to Hugging Face Spaces
+# Docs: https://huggingface.co/docs/hub/spaces-config-reference
+
+title: AapleSeva - Maharashtra Right to Service Assistant
+emoji: 🏛️
+colorFrom: blue
+colorTo: green
+sdk: streamlit
+sdk_version: "1.28.0"
+app_file: ui/app.py
+pinned: false
+license: mit
+
+# Environment variables (set in Space settings)
+# - API_BASE_URL: URL of the deployed API service
+# - LLM_PROVIDER: groq or gemini
+# - GROQ_API_KEY: (secret)
+# - GEMINI_API_KEY: (secret)
