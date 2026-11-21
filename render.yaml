@@ -1,0 +1,44 @@
+# Render Blueprint
+# Deploy AapleSeva API and UI to Render
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  # FastAPI Backend
+  - type: web
+    name: aapleseva-api
+    runtime: docker
+    dockerfilePath: ./Training/Dockerfile
+    dockerContext: ./Training
+    plan: free
+    env: python
+    healthCheckPath: /health
+    envVars:
+      - key: LLM_PROVIDER
+        value: groq
+      - key: LLM_MOCK
+        value: "0"
+      - key: GROQ_API_KEY
+        sync: false  # Set in Render dashboard
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11"
+    autoDeploy: true
+
+  # Streamlit UI
+  - type: web
+    name: aapleseva-ui
+    runtime: docker
+    dockerfilePath: ./Training/Dockerfile.ui
+    dockerContext: ./Training
+    plan: free
+    env: python
+    envVars:
+      - key: API_BASE_URL
+        fromService:
+          name: aapleseva-api
+          type: web
+          property: host
+      - key: PYTHON_VERSION
+        value: "3.11"
+    autoDeploy: true

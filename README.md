@@ -1,5 +1,21 @@
 # sanjivani-sj-13-aapleseva
 
+[![CI](https://github.com/akashjarhad/Training/actions/workflows/ci.yml/badge.svg)](https://github.com/akashjarhad/Training/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-30%20passing-brightgreen)](./Training/tests/)
+[![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+
+## 🚀 Live Demo
+
+> **Note**: Add your deployed URLs here after deployment
+
+- **Streamlit UI**: `https://your-app.onrender.com` or `https://huggingface.co/spaces/username/aapleseva`
+- **API**: `https://your-api.onrender.com`
+- **API Docs**: `https://your-api.onrender.com/docs`
+- **Health Check**: `https://your-api.onrender.com/health`
+
+---
+
 ## AapleSeva Project Card
 
 - **Product:** AapleSeva Citizen Services Assistant - An automated platform and CLI tool for Maharashtra Government's Aaple Sarkar citizen services portal.
@@ -534,5 +550,207 @@ streamlit run ui/app.py
 - If unfavorable → Second appeal by 2027-01-15
 - Second decision due: 2027-01-15
 - Can approach RTS Commission: 2027-01-15 onwards
+
+---
+
+## CI/CD Pipeline
+
+### GitHub Actions
+
+The project includes automated CI/CD with GitHub Actions:
+
+**Continuous Integration** (`.github/workflows/ci.yml`):
+- ✅ **Linting**: Ruff checks code quality
+- ✅ **Testing**: pytest runs 30 tests with mock LLM
+- ✅ **Docker**: Builds and tests both API and UI containers
+- ✅ **Status**: Green badge in README when all checks pass
+
+**Continuous Deployment** (`.github/workflows/deploy-render.yml`):
+- 🚀 Auto-deploys to Render on push to `main`
+- Triggered via webhook (configure `RENDER_DEPLOY_HOOK` secret)
+
+### Feature Branch Workflow
+
+1. Create feature branch: `git checkout -b feature/my-feature`
+2. Make changes, add tests, commit
+3. Push: `git push origin feature/my-feature`
+4. Open Pull Request on GitHub
+5. **CI runs automatically** - must be green ✅
+6. Code review and approval
+7. Merge to `main` → auto-deploys
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed workflow.
+
+### CI Badge
+
+The green CI badge at the top shows build status:
+- ✅ Green = All tests passing
+- ❌ Red = Build failed
+- 🟡 Yellow = Build in progress
+
+---
+
+## Deployment
+
+AapleSeva can be deployed to multiple platforms. See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete guide.
+
+### Quick Deploy Options
+
+**Option 1: Render** (Recommended - Full Stack)
+```bash
+# 1. Fork/clone repo
+# 2. Connect to Render
+# 3. Deploy using render.yaml blueprint
+# 4. Add GROQ_API_KEY or GEMINI_API_KEY secrets
+# 5. Access your-app.onrender.com
+```
+
+**Option 2: Hugging Face Spaces** (UI Only)
+```bash
+# 1. Create Space at huggingface.co/spaces
+# 2. Push ui/ code with app.yaml
+# 3. Set API_BASE_URL secret to your API endpoint
+# 4. Access huggingface.co/spaces/username/aapleseva
+```
+
+**Option 3: Docker** (Self-Hosted)
+```bash
+docker compose up -d
+# API: http://localhost:8000
+# UI: http://localhost:8501
+```
+
+### Deployment Files
+- `render.yaml`: Render Blueprint (2 services)
+- `app.yaml`: Hugging Face Spaces config
+- `docker-compose.yml`: Local/self-hosted deployment
+- `.github/workflows/deploy-render.yml`: Auto-deploy workflow
+
+---
+
+## Run with Docker
+
+The easiest way to run AapleSeva is with Docker Compose, which starts both the FastAPI backend and Streamlit UI with one command.
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
+- (Optional) LLM API keys for Groq or Gemini
+
+### Quick Start
+
+1. **Clone and configure**:
+```bash
+cd Training
+cp .env.example .env
+# Edit .env with your API keys (or set LLM_MOCK=1 for testing)
+```
+
+2. **Start services**:
+```bash
+docker compose up
+```
+
+This will:
+- Build the API and UI containers
+- Start FastAPI backend on http://localhost:8000
+- Start Streamlit UI on http://localhost:8501
+- Mount persistent storage for Chroma vector database
+
+3. **Access the app**:
+- **Streamlit UI**: http://localhost:8501
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+
+4. **Stop services**:
+```bash
+docker compose down
+# To remove volumes too:
+docker compose down -v
+```
+
+### Docker Architecture
+
+```
+┌─────────────────────────────────────────┐
+│  Docker Network: aapleseva-network      │
+│                                         │
+│  ┌──────────────┐    ┌──────────────┐  │
+│  │  UI Service  │───→│ API Service  │  │
+│  │  (Streamlit) │    │  (FastAPI)   │  │
+│  │  Port: 8501  │    │  Port: 8000  │  │
+│  └──────────────┘    └──────────────┘  │
+│                            │            │
+│                            ↓            │
+│                    ┌───────────────┐    │
+│                    │ Chroma Vector │    │
+│                    │   Database    │    │
+│                    │   (Volume)    │    │
+│                    └───────────────┘    │
+└─────────────────────────────────────────┘
+```
+
+**Services:**
+- `api`: FastAPI backend with RAG + agent endpoints
+- `ui`: Streamlit chat interface with appeal ladder
+
+**Volumes:**
+- `chroma-data`: Persistent vector store
+- `./data`: Mounted for records.json and source documents
+
+**Environment Variables** (in `.env`):
+```env
+LLM_PROVIDER=groq              # or gemini
+LLM_MOCK=0                     # Set to 1 for testing without keys
+GROQ_API_KEY=your_key_here
+GEMINI_API_KEY=your_key_here
+```
+
+### Development with Docker
+
+**Rebuild after code changes:**
+```bash
+docker compose up --build
+```
+
+**View logs:**
+```bash
+docker compose logs -f api    # API logs
+docker compose logs -f ui     # UI logs
+docker compose logs -f        # Both
+```
+
+**Run commands inside containers:**
+```bash
+# API container
+docker compose exec api python -m app.ingest --report
+docker compose exec api python -m pytest tests/
+
+# UI container
+docker compose exec ui bash
+```
+
+### Testing
+
+Run pytest inside the API container:
+```bash
+docker compose exec api python -m pytest tests/ -v
+```
+
+Or run locally:
+```bash
+cd Training
+python -m pytest tests/ -v
+```
+
+**Test Coverage:**
+- `test_records.py`: Core record functions (load, search, get_by_id)
+- `test_api.py`: FastAPI endpoints (/health, /records, /search, /ask, /chat, /agent)
+- `test_search.py`: Semantic search (chunking, embedding, vector store)
+- `test_tools.py`: Agent tools (rag_search, rts_due_date)
+
+**Linting:**
+```bash
+ruff check .
+```
 
 ---
