@@ -39,3 +39,6 @@ data/raw/*
 # endpoint. Not source data, so it stays out of version control.
 data/questions.json
 
+# Request metrics logged by /ask endpoint
+data/metrics.json
+

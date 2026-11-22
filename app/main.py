@@ -20,8 +20,11 @@ Endpoints
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
@@ -34,7 +37,13 @@ from app.records import get_by_id, load_records
 from app.smart_search import SmartSearch
 from app.rag import answer_question
 from app.graph import create_agent_graph, run_agent_graph
-from app.graph import create_agent_graph, run_agent_graph
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI(
@@ -54,6 +63,94 @@ RECORDS: list[dict] = load_records()
 SEARCH: SmartSearch = SmartSearch(RECORDS)
 
 QUESTIONS_PATH = Path(__file__).resolve().parent.parent / "data" / "questions.json"
+METRICS_PATH = Path(__file__).resolve().parent.parent / "data" / "metrics.json"
+
+# Simple in-memory cache for /ask endpoint
+# Key: hash of (question, top_k), Value: (response, timestamp)
+ASK_CACHE: dict[str, tuple[dict, float]] = {}
+CACHE_TTL_SECONDS = 3600  # 1 hour cache TTL
+MAX_QUESTION_LENGTH = 500  # Input limit for questions
+
+
+# --------------------------------------------------------------------------- #
+# Cache and metrics helpers
+# --------------------------------------------------------------------------- #
+def _make_cache_key(question: str, top_k: int) -> str:
+    """Generate cache key from question and top_k parameter."""
+    key_str = f"{question.strip().lower()}|{top_k}"
+    return hashlib.sha256(key_str.encode()).hexdigest()
+
+
+def _get_cached_response(cache_key: str) -> dict | None:
+    """Get cached response if exists and not expired."""
+    if cache_key not in ASK_CACHE:
+        return None
+    
+    response, cached_at = ASK_CACHE[cache_key]
+    age = time.time() - cached_at
+    
+    if age > CACHE_TTL_SECONDS:
+        # Expired, remove from cache
+        del ASK_CACHE[cache_key]
+        return None
+    
+    return response
+
+
+def _cache_response(cache_key: str, response: dict) -> None:
+    """Store response in cache with current timestamp."""
+    ASK_CACHE[cache_key] = (response, time.time())
+
+
+def _log_request_metrics(
+    endpoint: str,
+    question: str,
+    latency_ms: float,
+    cached: bool,
+    input_tokens: int | None = None,
+    output_tokens: int | None = None,
+    provider: str | None = None,
+    model: str | None = None,
+) -> None:
+    """Log request metrics to file and logger."""
+    metric = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "endpoint": endpoint,
+        "question_length": len(question),
+        "latency_ms": round(latency_ms, 2),
+        "cached": cached,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "provider": provider,
+        "model": model,
+    }
+    
+    # Log to file
+    METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    metrics = []
+    if METRICS_PATH.exists():
+        try:
+            with open(METRICS_PATH, "r", encoding="utf-8") as f:
+                metrics = json.load(f)
+        except json.JSONDecodeError:
+            metrics = []
+    
+    metrics.append(metric)
+    
+    # Keep only last 1000 metrics to prevent unbounded growth
+    metrics = metrics[-1000:]
+    
+    with open(METRICS_PATH, "w", encoding="utf-8") as f:
+        json.dump(metrics, f, indent=2, ensure_ascii=False)
+    
+    # Log to console
+    cache_str = "[CACHED]" if cached else ""
+    logger.info(
+        f"{endpoint} {cache_str} | latency: {latency_ms:.2f}ms | "
+        f"question_len: {len(question)} | "
+        f"tokens: in={input_tokens or 'N/A'} out={output_tokens or 'N/A'} | "
+        f"{provider}/{model}"
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -88,7 +185,12 @@ class ChatRequest(BaseModel):
 class AskRequest(BaseModel):
     """Body for ``POST /ask`` (RAG endpoint)."""
 
-    question: str = Field(..., min_length=1, description="User question")
+    question: str = Field(
+        ...,
+        min_length=1,
+        max_length=MAX_QUESTION_LENGTH,
+        description=f"User question (max {MAX_QUESTION_LENGTH} chars)",
+    )
     top_k: int = Field(5, ge=1, le=20, description="Number of chunks to retrieve")
     provider: str | None = Field(None, description="LLM provider (groq/gemini)")
     temperature: float = Field(0.2, ge=0.0, le=1.0, description="LLM temperature")
@@ -190,6 +292,55 @@ def _extract_json(text: str) -> dict:
 def health() -> dict:
     """Return ``status: ok`` plus the number of loaded records."""
     return {"status": "ok", "service": "AapleSeva", "records": len(RECORDS)}
+
+
+@app.get("/metrics", summary="Performance metrics and cache statistics")
+def get_metrics() -> dict:
+    """
+    Return performance metrics and cache statistics.
+    
+    Includes:
+    - Cache size and hit rate
+    - Average latency
+    - Total requests processed
+    - Token usage statistics
+    """
+    metrics = []
+    if METRICS_PATH.exists():
+        try:
+            with open(METRICS_PATH, "r", encoding="utf-8") as f:
+                metrics = json.load(f)
+        except json.JSONDecodeError:
+            pass
+    
+    if not metrics:
+        return {
+            "total_requests": 0,
+            "cache_size": len(ASK_CACHE),
+            "cache_ttl_seconds": CACHE_TTL_SECONDS,
+            "max_question_length": MAX_QUESTION_LENGTH,
+        }
+    
+    cached_requests = sum(1 for m in metrics if m.get("cached"))
+    total_requests = len(metrics)
+    avg_latency = sum(m.get("latency_ms", 0) for m in metrics) / len(metrics)
+    
+    # Calculate token statistics (only for non-cached requests)
+    non_cached = [m for m in metrics if not m.get("cached")]
+    total_input_tokens = sum(m.get("input_tokens") or 0 for m in non_cached)
+    total_output_tokens = sum(m.get("output_tokens") or 0 for m in non_cached)
+    
+    return {
+        "total_requests": total_requests,
+        "cached_requests": cached_requests,
+        "cache_hit_rate": round(cached_requests / total_requests * 100, 2) if total_requests > 0 else 0,
+        "cache_size": len(ASK_CACHE),
+        "cache_ttl_seconds": CACHE_TTL_SECONDS,
+        "avg_latency_ms": round(avg_latency, 2),
+        "total_input_tokens": total_input_tokens,
+        "total_output_tokens": total_output_tokens,
+        "max_question_length": MAX_QUESTION_LENGTH,
+    }
 
 
 @app.get("/records", summary="List notified service records")
@@ -310,6 +461,11 @@ def ask(payload: AskRequest) -> dict:
     """
     RAG endpoint: answer questions using retrieved document chunks + LLM.
     
+    Features:
+    - Input validation (max length, sanitization)
+    - In-memory cache (1-hour TTL) to avoid redundant LLM calls
+    - Request metrics logging (latency, tokens, cache hit/miss)
+    
     Retrieves top-k relevant chunks via semantic search, sends them with the
     question to an LLM, and returns the answer with source citations.
     
@@ -326,16 +482,81 @@ def ask(payload: AskRequest) -> dict:
         - provider: LLM provider used
         - model: LLM model used
         - mock: whether response was mocked
+        - cached: whether response came from cache
+        - latency_ms: request processing time in milliseconds
     """
+    start_time = time.time()
+    
+    # Validate and sanitize input
+    question = payload.question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
+    
+    if len(question) > MAX_QUESTION_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Question exceeds maximum length of {MAX_QUESTION_LENGTH} characters",
+        )
+    
+    # Check cache
+    cache_key = _make_cache_key(question, payload.top_k)
+    cached_response = _get_cached_response(cache_key)
+    
+    if cached_response is not None:
+        # Cache hit
+        latency_ms = (time.time() - start_time) * 1000
+        
+        _log_request_metrics(
+            endpoint="/ask",
+            question=question,
+            latency_ms=latency_ms,
+            cached=True,
+            provider=cached_response.get("provider"),
+            model=cached_response.get("model"),
+        )
+        
+        # Add cache metadata
+        response = {**cached_response, "cached": True, "latency_ms": round(latency_ms, 2)}
+        return response
+    
+    # Cache miss - call RAG
     try:
         result = answer_question(
-            question=payload.question,
+            question=question,
             top_k=payload.top_k,
             provider=payload.provider,
             temperature=payload.temperature,
         )
+        
+        latency_ms = (time.time() - start_time) * 1000
+        
+        # Estimate token counts (rough heuristic: 1 token ≈ 4 chars)
+        input_tokens = (len(question) + sum(len(s.get("title", "")) for s in result["sources"])) // 4
+        output_tokens = len(result["answer"]) // 4
+        
+        _log_request_metrics(
+            endpoint="/ask",
+            question=question,
+            latency_ms=latency_ms,
+            cached=False,
+            input_tokens=input_tokens,
+            output_tokens=output_tokens,
+            provider=result.get("provider"),
+            model=result.get("model"),
+        )
+        
+        # Add metadata
+        result["cached"] = False
+        result["latency_ms"] = round(latency_ms, 2)
+        
+        # Cache the response
+        _cache_response(cache_key, result)
+        
         return result
+        
     except Exception as exc:
+        latency_ms = (time.time() - start_time) * 1000
+        logger.error(f"/ask failed after {latency_ms:.2f}ms: {exc}")
         raise HTTPException(
             status_code=500,
             detail=f"RAG query failed: {exc}",
