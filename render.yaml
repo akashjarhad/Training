@@ -7,8 +7,9 @@ services:
   - type: web
     name: aapleseva-api
     runtime: docker
-    dockerfilePath: ./Training/Dockerfile
-    dockerContext: ./Training
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    rootDir: Training
     plan: free
     env: python
     healthCheckPath: /health
@@ -29,8 +30,9 @@ services:
   - type: web
     name: aapleseva-ui
     runtime: docker
-    dockerfilePath: ./Training/Dockerfile.ui
-    dockerContext: ./Training
+    dockerfilePath: ./Dockerfile.ui
+    dockerContext: .
+    rootDir: Training
     plan: free
     env: python
     envVars:
