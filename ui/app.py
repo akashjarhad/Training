@@ -22,10 +22,9 @@ from typing import Any
 
 
 # Configuration
-API_BASE_URL = st.secrets.get("API_BASE_URL", "http://127.0.0.1:8000") if hasattr(st, 'secrets') and st.secrets else "http://127.0.0.1:8000"
-# Support Docker environment variable
 import os
-API_BASE_URL = os.getenv("API_BASE_URL", API_BASE_URL)
+# Use environment variable first, fallback to localhost
+API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 FEEDBACK_FILE = Path(__file__).parent / "feedback.json"
 
 # Appeal timeline constants (days)
