@@ -9,7 +9,6 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    rootDir: Training
     plan: free
     env: python
     healthCheckPath: /health
@@ -32,7 +31,6 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile.ui
     dockerContext: .
-    rootDir: Training
     plan: free
     env: python
     envVars:
