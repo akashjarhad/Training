@@ -18,9 +18,9 @@ services:
       - key: LLM_MOCK
         value: "0"
       - key: GEMINI_API_KEY
-        sync: false  # Set in Render dashboard: AIzaSyAb8RN6LVMoAxA5ECAEDI-qwqM9sjETnVpFtfRvmlPouoQ9Hv5Q
+        sync: false  # Set in Render dashboard (Environment tab)
       - key: GEMINI_MODEL
-        value: gemini-1.5-flash
+        value: gemini-2.0-flash
       - key: PYTHON_VERSION
         value: "3.11"
     autoDeploy: true
