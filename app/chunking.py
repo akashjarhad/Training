@@ -343,9 +343,8 @@ def chunk_documents(raw_dir=None, only=None) -> list[Chunk]:
     """
     raw = get_raw_dir(raw_dir)
     if not raw.exists():
-        raise FileNotFoundError(
-            f"{raw} not found. Run 'python -m app.fetch' first."
-        )
+        print(f"  warning: {raw} not found, indexing records only", file=sys.stderr)
+        raw.mkdir(parents=True, exist_ok=True)
 
     manifest = load_manifest(raw)
     paths = sorted(
@@ -356,7 +355,7 @@ def chunk_documents(raw_dir=None, only=None) -> list[Chunk]:
         wanted = set(only)
         paths = [p for p in paths if p.name in wanted]
     if not paths:
-        raise FileNotFoundError(f"no PDF or HTML documents found in {raw}")
+        print("  warning: no PDF or HTML documents found in raw/, indexing records only", file=sys.stderr)
 
     all_chunks: list[Chunk] = []
 
