@@ -587,8 +587,6 @@ curl "http://127.0.0.1:8000/search/semantic?q=caste%20certificate%20time%20limit
 - **Storage**: Persistent Chroma at `data/chroma/`
 - **Supports**: PDF + HTML, preserves source/page/title metadata
 
-See `SEMANTIC_SEARCH.md` for architecture details.
-
 ### RAG - Answer Questions with Citations (`POST /ask`)
 
 Retrieves relevant chunks and uses an LLM to generate grounded answers with source citations.
@@ -627,8 +625,6 @@ python -m eval.run_eval
 ```
 
 Results compare multiple configs (chunk size, top-k) and update README with winner table.
-
-See `RAG_SYSTEM.md` for implementation details.
 
 ## RAG Evaluation Results
 
@@ -848,7 +844,7 @@ The green CI badge at the top shows build status:
 
 ## Deployment
 
-AapleSeva can be deployed to multiple platforms. See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete guide.
+AapleSeva can be deployed to Render or Hugging Face Spaces.
 
 ### Quick Deploy Options
 

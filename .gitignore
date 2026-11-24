@@ -42,3 +42,9 @@ data/questions.json
 # Request metrics logged by /ask endpoint
 data/metrics.json
 
+
+# Local Streamlit per-machine config (API base URL etc.)
+.streamlit/secrets.toml
+
+# Persistent Chroma vector index (regenerable: python -m app.embed --index)
+data/chroma/
