@@ -46,5 +46,5 @@ data/metrics.json
 # Local Streamlit per-machine config (API base URL etc.)
 .streamlit/secrets.toml
 
-# Persistent Chroma vector index (regenerable: python -m app.embed --index)
-data/chroma/
+# Chroma vector index is committed so Render doesn't need to rebuild it
+# data/chroma/
