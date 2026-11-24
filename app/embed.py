@@ -75,7 +75,10 @@ def index_chunks(chunks: list[Chunk], db_path=None, batch_size=100) -> dict[str,
     existing = collection.count()
     if existing > 0:
         print(f"  clearing {existing} existing chunks", file=sys.stderr)
-        collection.delete(where={})  # delete all
+        # Fetch all IDs and delete by ID (empty where={} is rejected by newer Chroma)
+        all_ids = collection.get(include=[])["ids"]
+        if all_ids:
+            collection.delete(ids=all_ids)
 
     for start in range(0, len(chunks), batch_size):
         batch = chunks[start : start + batch_size]

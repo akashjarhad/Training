@@ -260,12 +260,86 @@ def chunk_html(path: Path, title: str, source_url: str) -> list[Chunk]:
     return chunks
 
 
+def chunk_records_json(json_path: Path) -> list[Chunk]:
+    """
+    Turn each service record in a JSON file into a self-contained text chunk.
+
+    Only records that have at least a service_name are included. Records with
+    complete fields (time limit, designated officer) produce richer chunks so
+    the LLM has everything it needs in one passage.
+    """
+    try:
+        with open(json_path, encoding="utf-8") as fh:
+            records = json.load(fh)
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  {json_path.name}: unreadable ({exc})", file=sys.stderr)
+        return []
+
+    if not isinstance(records, list):
+        return []
+
+    chunks: list[Chunk] = []
+    source_url = "https://aaplesarkar.mahaonline.gov.in"
+    title = "AapleSeva Notified Services — time limits and officers"
+
+    for rec in records:
+        name = rec.get("service_name", "").strip()
+        if not name:
+            continue
+
+        dept = rec.get("department", "")
+        category = rec.get("category", "")
+        tl = rec.get("time_limit_days")
+        tl_text = rec.get("time_limit_text", "")
+        do = rec.get("designated_officer", "")
+        fa = rec.get("first_appellate_officer", "")
+        sa = rec.get("second_appellate_officer", "")
+        rec_id = rec.get("id", "")
+        rec_url = rec.get("source_url", source_url)
+
+        # Build a natural-language description so embedding captures meaning.
+        lines = [f"Service: {name}"]
+        if dept:
+            lines.append(f"Department: {dept}")
+        if category:
+            lines.append(f"Category: {category}")
+        if tl is not None:
+            day_label = tl_text if tl_text else f"{tl} days"
+            lines.append(f"Time limit: {day_label}")
+        if do:
+            lines.append(f"Designated Officer (who processes the application): {do}")
+        if fa:
+            lines.append(f"First Appellate Officer (first appeal if delayed): {fa}")
+        if sa:
+            lines.append(f"Second Appellate Officer: {sa}")
+        lines.append(f"Source: {rec_url}")
+
+        text = "\n".join(lines)
+        chunk_id = f"{json_path.name}:rec{rec_id}" if rec_id else f"{json_path.name}:{name[:30]}"
+
+        chunks.append(
+            Chunk(
+                id=chunk_id,
+                text=text,
+                source=json_path.name,
+                page=None,
+                title=title,
+                source_url=rec_url,
+                chunk_index=0,
+                n_chars=len(text),
+            )
+        )
+    return chunks
+
+
 def chunk_documents(raw_dir=None, only=None) -> list[Chunk]:
     """
-    Chunk every document in data/raw/.
+    Chunk every document in data/raw/ PLUS the structured records JSON files.
 
-    ``only`` restricts the run to the given filenames. Each document is
-    handled inside its own try/except so one bad file cannot stop the rest.
+    ``only`` restricts the PDF/HTML run to the given filenames but always
+    includes the records JSON so service time limits and officers are indexed.
+    Each document is handled inside its own try/except so one bad file cannot
+    stop the rest.
     """
     raw = get_raw_dir(raw_dir)
     if not raw.exists():
@@ -285,6 +359,19 @@ def chunk_documents(raw_dir=None, only=None) -> list[Chunk]:
         raise FileNotFoundError(f"no PDF or HTML documents found in {raw}")
 
     all_chunks: list[Chunk] = []
+
+    # --- structured records (always indexed regardless of `only`) ---
+    data_dir = Path(__file__).resolve().parent.parent / "data"
+    for json_name in ("sample_records.json", "records.json"):
+        json_path = data_dir / json_name
+        if not json_path.exists():
+            continue
+        produced = chunk_records_json(json_path)
+        if produced:
+            print(f"  {json_name:<38} {len(produced):>5} record chunks")
+            all_chunks.extend(produced)
+
+    # --- PDF / HTML documents ---
     for path in paths:
         info = manifest.get(path.name, {})
         title = info.get("title") or _FALLBACK_TITLES.get(path.name) or path.stem
