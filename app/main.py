@@ -37,6 +37,8 @@ from app.records import get_by_id, load_records
 from app.smart_search import SmartSearch
 from app.rag import answer_question
 from app.graph import create_agent_graph, run_agent_graph
+from app.embed import get_collection, index_chunks
+from app.chunking import chunk_documents
 
 # Configure logging
 logging.basicConfig(
@@ -55,6 +57,33 @@ app = FastAPI(
     ),
     version="1.0.0",
 )
+
+
+@app.on_event("startup")
+async def auto_index_on_startup() -> None:
+    """
+    Build the Chroma vector index on startup if the collection is empty.
+
+    This ensures the RAG endpoint works even when the container starts with
+    an empty data/chroma/ directory (e.g. on Render where the filesystem is
+    ephemeral and the baked index may not survive between deploys).
+    """
+    try:
+        collection = get_collection()
+        count = collection.count()
+        if count == 0:
+            logger.info("Chroma collection is empty — building index on startup...")
+            chunks = chunk_documents()
+            report = index_chunks(chunks)
+            logger.info(
+                "Startup index complete: %d chunks from %d sources",
+                report["indexed"],
+                report["sources"],
+            )
+        else:
+            logger.info("Chroma collection has %d chunks — skipping index build", count)
+    except Exception as exc:
+        logger.warning("Startup index failed (RAG may not work): %s", exc)
 
 # Load the record set once at import time and build the search index once.
 # load_records() defaults to data/sample_records.json (the 20 rich Revenue
