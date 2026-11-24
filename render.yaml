@@ -20,7 +20,7 @@ services:
       - key: GEMINI_API_KEY
         sync: false  # Set in Render dashboard (Environment tab)
       - key: GEMINI_MODEL
-        value: gemini-2.0-flash
+        value: gemini-3.5-flash-lite
       - key: PYTHON_VERSION
         value: "3.11"
     autoDeploy: true

@@ -43,7 +43,7 @@ _PROVIDER_CONFIG = {
         "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
         "key_env": "GEMINI_API_KEY",
         "model_env": "GEMINI_MODEL",
-        "default_model": "gemini-1.5-flash",
+        "default_model": "gemini-3.5-flash-lite",
     },
 }
 
