@@ -24,7 +24,12 @@ from typing import Any
 # Configuration
 import os
 # Use environment variable first, fallback to localhost
-API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+import os
+
+API_BASE_URL = os.getenv(
+    "API_BASE_URL",
+    "http://127.0.0.1:8000"
+)
 FEEDBACK_FILE = Path(__file__).parent / "feedback.json"
 
 # Appeal timeline constants (days)
