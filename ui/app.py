@@ -50,12 +50,22 @@ def call_ask_endpoint(question: str, top_k: int = 5) -> dict:
         response = requests.post(
             f"{API_BASE_URL}/ask",
             json={"question": question, "top_k": top_k},
-            timeout=30,
+            timeout=60,
         )
-        response.raise_for_status()
+        if not response.ok:
+            return _error_result(response)
         return response.json()
     except Exception as exc:
-        return {"error": str(exc), "answer": f"Error: {exc}"}
+        return {"error": str(exc), "answer": f"⚠️ Could not reach the API: {exc}"}
+
+
+def _error_result(response) -> dict:
+    """Turn a failed API response into a readable chat message."""
+    try:
+        detail = response.json().get("detail", response.text)
+    except ValueError:
+        detail = response.text
+    return {"error": str(detail), "answer": f"⚠️ {detail}"}
 
 
 def call_agent_endpoint(query: str, conversation_history: list = None) -> dict:
@@ -67,12 +77,13 @@ def call_agent_endpoint(query: str, conversation_history: list = None) -> dict:
                 "query": query,
                 "conversation_history": conversation_history or []
             },
-            timeout=60,
+            timeout=90,
         )
-        response.raise_for_status()
+        if not response.ok:
+            return _error_result(response)
         return response.json()
     except Exception as exc:
-        return {"error": str(exc), "answer": f"Error: {exc}"}
+        return {"error": str(exc), "answer": f"⚠️ Could not reach the API: {exc}"}
 
 
 def get_service_by_name(service_name: str) -> dict | None:

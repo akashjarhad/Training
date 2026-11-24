@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import dataclass
 
 try:
@@ -49,6 +50,10 @@ _PROVIDER_CONFIG = {
 
 #: Tuple form for error messages / display.
 PROVIDERS = tuple(_PROVIDER_CONFIG)
+
+# HTTP statuses worth retrying: rate limit and transient server/gateway errors.
+_RETRYABLE_STATUS = {429, 500, 502, 503, 504}
+_MAX_RETRIES = 3
 
 
 @dataclass
@@ -115,20 +120,50 @@ class LLMProvider:
             )
 
         url = f"{self.base_url}/chat/completions"
-        payload = {
-            "model": self.model,
-            "messages": messages,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        }
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        resp = requests.post(url, headers=headers, json=payload, timeout=self.timeout)
-        resp.raise_for_status()
-        text = resp.json()["choices"][0]["message"]["content"]
-        return LLMResponse(text=text, provider=self.provider, model=self.model)
+
+        # Try the main model first, then an optional fallback model.
+        models = [self.model]
+        fallback = os.getenv("LLM_FALLBACK_MODEL")
+        if fallback and fallback != self.model:
+            models.append(fallback)
+
+        last_exc: Exception | None = None
+        for model in models:
+            payload = {
+                "model": model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+            # Retry transient failures (rate limit, overload, gateway errors,
+            # dropped connections) with exponential backoff: 1s, 2s, 4s.
+            for attempt in range(_MAX_RETRIES):
+                try:
+                    resp = requests.post(
+                        url, headers=headers, json=payload, timeout=self.timeout
+                    )
+                except (requests.ConnectionError, requests.Timeout) as exc:
+                    last_exc = exc
+                else:
+                    if resp.status_code not in _RETRYABLE_STATUS:
+                        resp.raise_for_status()
+                        text = resp.json()["choices"][0]["message"]["content"]
+                        return LLMResponse(text=text, provider=self.provider, model=model)
+                    last_exc = requests.HTTPError(
+                        f"{resp.status_code} from {self.provider} ({model})",
+                        response=resp,
+                    )
+                if attempt < _MAX_RETRIES - 1:
+                    time.sleep(2**attempt)
+
+        raise RuntimeError(
+            f"{self.provider} is unavailable after retries "
+            f"(tried {', '.join(models)}): {last_exc}"
+        )
 
 
 def get_provider(provider: str | None = None, **kwargs) -> LLMProvider:

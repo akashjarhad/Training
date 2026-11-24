@@ -586,9 +586,14 @@ def ask(payload: AskRequest) -> dict:
     except Exception as exc:
         latency_ms = (time.time() - start_time) * 1000
         logger.error(f"/ask failed after {latency_ms:.2f}ms: {exc}")
+        unavailable = "unavailable after retries" in str(exc)
         raise HTTPException(
-            status_code=500,
-            detail=f"RAG query failed: {exc}",
+            status_code=503 if unavailable else 500,
+            detail=(
+                "The AI service is busy right now. Please try again in a minute."
+                if unavailable
+                else f"RAG query failed: {exc}"
+            ),
         )
 
 
